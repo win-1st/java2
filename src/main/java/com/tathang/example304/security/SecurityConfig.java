@@ -17,6 +17,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -30,34 +32,50 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors() // ✅ Bật CORS cho React frontend
-                .and()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Sử dụng CORS config
                 .authenticationProvider(authenticationProvider())
                 .authorizeHttpRequests((auth2) -> auth2
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/some-path-here/**").permitAll()
                         .requestMatchers(HttpMethod.GET).permitAll()
-                        .requestMatchers(HttpMethod.PUT).permitAll() // Giữ nguyên logic của bạn
+                        .requestMatchers(HttpMethod.PUT).permitAll()
                         .requestMatchers(HttpMethod.PATCH).permitAll()
                         .requestMatchers(HttpMethod.DELETE).permitAll()
                         .requestMatchers("/api/employee/tables/*/status").permitAll()
                         .requestMatchers(HttpMethod.POST).permitAll()
-                        .requestMatchers("/api/payment/momo/ipn").permitAll() // Cho phép IPN từ MoMo
+                        .requestMatchers("/api/payment/momo/ipn").permitAll()
                         .requestMatchers("/api/payment/**").authenticated()
                         .anyRequest().authenticated())
-                .csrf(c -> c.disable()); // ✅ Tắt CSRF để React gọi API PUT dễ hơn
+                .csrf(c -> c.disable());
         return http.build();
     }
 
-    // ✅ Cấu hình CORS cho phép React (localhost:3000) truy cập
+    // ✅ CẬP NHẬT: Thêm tất cả origins của React Native Web
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // React app
-        configuration.addAllowedMethod("*"); // Cho phép mọi method (GET, POST, PUT, DELETE)
-        configuration.addAllowedHeader("*"); // Cho phép mọi header
-        configuration.setAllowCredentials(true); // Nếu bạn cần gửi cookie hoặc token
+
+        // ✅ THÊM localhost:8081 - PORT WEB CỦA BẠN
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:8081", // React Native Web của bạn
+                "http://127.0.0.1:8081", // localhost alternative
+                "http://localhost:19006", // Expo Web default
+                "http://localhost:3000", // React app thông thường
+                "http://10.0.2.2:8081", // Android emulator
+                "exp://", // Expo scheme
+                "capacitor://localhost" // Capacitor
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Content-Disposition",
+                "Access-Control-Allow-Origin"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
