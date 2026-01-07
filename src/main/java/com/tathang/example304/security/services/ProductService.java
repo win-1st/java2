@@ -19,8 +19,8 @@ public class ProductService {
     private final FileStorageService fileStorageService;
 
     public ProductService(ProductRepository productRepository,
-                          CategoryRepository categoryRepository,
-                          FileStorageService fileStorageService) {
+            CategoryRepository categoryRepository,
+            FileStorageService fileStorageService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.fileStorageService = fileStorageService;
@@ -28,7 +28,7 @@ public class ProductService {
 
     // === CREATE PRODUCT ===
     public Product createProduct(String name, String description, BigDecimal price,
-                               Long categoryId, Integer stockQuantity, String imageUrl) {
+            Long categoryId, Integer stockQuantity, String imageUrl) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
@@ -46,7 +46,7 @@ public class ProductService {
 
     // === UPDATE PRODUCT ===
     public Product updateProduct(Long id, String name, String description, BigDecimal price,
-                               Long categoryId, Integer stockQuantity, String imageUrl) {
+            Long categoryId, Integer stockQuantity, String imageUrl) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         Category category = categoryRepository.findById(categoryId)
@@ -88,7 +88,10 @@ public class ProductService {
 
     // === GET ALL PRODUCTS ===
     public List<Product> getAllProducts() {
-        return productRepository.findAll();
+        return productRepository.findAll()
+                .stream()
+                .filter(p -> p.getCategory() != null)
+                .toList();
     }
 
     public Product getProductById(Long id) {
@@ -112,4 +115,3 @@ public class ProductService {
         return categoryRepository.findAll();
     }
 }
- 
