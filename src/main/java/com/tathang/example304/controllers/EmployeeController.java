@@ -204,14 +204,6 @@ public class EmployeeController {
         return bill != null ? ResponseEntity.ok(bill) : ResponseEntity.notFound().build();
     }
 
-    // ===================== PRODUCTS =====================
-
-    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
-    @GetMapping("/products/search")
-    public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
-        return ResponseEntity.ok(productService.searchProducts(keyword));
-    }
-
     @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
     @PutMapping("/orders/{orderId}/items/{productId}")
     public ResponseEntity<Order> updateOrderItemQuantity(
@@ -334,4 +326,53 @@ public class EmployeeController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    // ===================== PRODUCTS =====================
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    @GetMapping("/products/search")
+    public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
+        return ResponseEntity.ok(productService.searchProducts(keyword));
+    }
+
+    // ✅ Lấy tất cả sản phẩm (công khai hoặc cho employee)
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    @GetMapping("/products")
+    public ResponseEntity<List<Product>> getAllProducts() {
+        try {
+            List<Product> products = productService.getAllProducts();
+            System.out.println("📦 Found " + products.size() + " products");
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            System.err.println("❌ Error getting products: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    // ✅ Lấy sản phẩm theo ID
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    @GetMapping("/products/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
+        try {
+            Product product = productService.getProductById(id);
+            return product != null ? ResponseEntity.ok(product) : ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            System.err.println("❌ Error getting product " + id + ": " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ✅ Lấy sản phẩm theo danh mục
+    @PreAuthorize("hasRole('EMPLOYEE') or hasRole('MODERATOR') or hasRole('ADMIN')")
+    @GetMapping("/products/category/{categoryId}")
+    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long categoryId) {
+        try {
+            List<Product> products = productService.getProductsByCategory(categoryId);
+            return ResponseEntity.ok(products);
+        } catch (Exception e) {
+            System.err.println("❌ Error getting products by category " + categoryId + ": " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 }
