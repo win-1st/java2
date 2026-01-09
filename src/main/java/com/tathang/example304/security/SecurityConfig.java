@@ -32,20 +32,20 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ✅ Sử dụng CORS config
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authenticationProvider(authenticationProvider())
-                .authorizeHttpRequests((auth2) -> auth2
+                .authorizeHttpRequests(authz -> authz
+                        // 1. Cho phép tất cả truy cập không cần auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
-                        .requestMatchers("/api/some-path-here/**").permitAll()
-                        .requestMatchers(HttpMethod.GET).permitAll()
-                        .requestMatchers(HttpMethod.PUT).permitAll()
-                        .requestMatchers(HttpMethod.PATCH).permitAll()
-                        .requestMatchers(HttpMethod.DELETE).permitAll()
-                        .requestMatchers("/api/employee/tables/*/status").permitAll()
-                        .requestMatchers(HttpMethod.POST).permitAll()
                         .requestMatchers("/api/payment/momo/ipn").permitAll()
-                        .requestMatchers("/api/payment/**").authenticated()
+                        .requestMatchers("/error").permitAll() // Thêm dòng này!
+
+                        // 2. API cho employee cần role
+                        .requestMatchers("/api/employee/**")
+                        .hasAnyRole("EMPLOYEE", "MODERATOR", "ADMIN")
+
+                        // 3. Tất cả request khác cần authenticated
                         .anyRequest().authenticated())
                 .csrf(c -> c.disable());
         return http.build();
